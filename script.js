@@ -96,7 +96,6 @@ const popupTitle = notePopup.querySelector('.modal-title');
 const popupText = notePopup.querySelector('.modal-body');
 const closeBtn = notePopup.querySelector('.close-modal');
 const imageInput = document.getElementById('image-input');
-
 const editPopup = document.getElementById('editPopup');
 const updateNoteButton = document.getElementById('updateNote');
 const editImageInput = document.getElementById('edit-image-input');
