@@ -42,7 +42,10 @@ const Size = Quill.import('attributors/style/size');
 Size.whitelist = fontSizes.map(s => s.value);
 Quill.register(Size, true);
 
+
 // ---- Quill Editors ----
+
+// For Adding Notes
 const titleEditor = new Quill('#title-editor', {
     theme: 'snow',
     placeholder: 'Note Title',
@@ -71,6 +74,7 @@ const textEditor = new Quill('#text-editor', {
     }
 });
 
+// For Editing Notes (in the modal)
 const editTitleEditor = new Quill('#edit-title-editor', {
     theme: 'snow',
     placeholder: 'Note Title',
@@ -99,35 +103,41 @@ const editTextEditor = new Quill('#edit-text-editor', {
     }
 });
 
+
 // ---- Custom Dropdown Display Logic ----
 function updatePickerLabels() {
-    // Font labels
-    document.querySelectorAll('.ql-font .ql-picker-item').forEach(item => {
-        const value = item.getAttribute('data-value');
-        const font = Font.whitelist.find(f => f.value === value);
+    document.querySelectorAll('.ql-font .ql-picker-item, .ql-font .ql-picker-label').forEach(item => {
+        const value = item.getAttribute('data-value') || 'arial'; // Default to arial
+        const font = Font.whitelist.find(f => f.value === value) || Font.whitelist.find(f => f.value === 'arial');
         if (font) {
             item.setAttribute('data-label', font.name);
             item.textContent = font.name;
         }
     });
-    // Size labels
-    document.querySelectorAll('.ql-size .ql-picker-item').forEach(item => {
-        const value = item.getAttribute('data-value');
-        const size = fontSizes.find(s => s.value === value);
+    document.querySelectorAll('.ql-size .ql-picker-item, .ql-size .ql-picker-label').forEach(item => {
+        const value = item.getAttribute('data-value') || '16px'; // Default to normal
+        const size = fontSizes.find(s => s.value === value) || fontSizes.find(s => s.value === '16px');
         if (size) {
             item.setAttribute('data-label', size.label);
             item.textContent = size.label;
         }
     });
 }
-// Always call this after editor initialization:
-setTimeout(updatePickerLabels, 500);
+setTimeout(updatePickerLabels, 500); // Delay to ensure editors are ready
 
-// ---- Your existing DOM references ----
+
+// ---- DOM References ----
 const addNoteButton = document.getElementById('addNote');
 const notesDiv = document.getElementById('notes');
 const imageInput = document.getElementById('image-input');
+
+// Edit Modal DOM References
+const editPopup = document.getElementById('edit-popup');
 const editImageInput = document.getElementById('edit-image-input');
+const editPreviewImage = document.getElementById('edit-preview-image');
+const saveEditBtn = document.getElementById('save-edit-btn');
+const cancelEditBtn = document.getElementById('cancel-edit-btn');
+
 
 let editingIndex = -1;
 let currentImageDataUrl = '';
@@ -144,12 +154,14 @@ function fileToBase64(file) {
 
 showNotes();
 
+// ---- CRUD Functions (Create, Read, Update, Delete) ----
+
 function addNotes() {
     let notes = getNotes();
     const noteTitle = titleEditor.root.innerHTML;
     const noteText = textEditor.root.innerHTML;
 
-    if (noteTitle === '<p><br></p>' || noteText === '<p><br></p>') {
+    if (noteTitle.trim() === '<p><br></p>' || noteText.trim() === '<p><br></p>') {
         alert('Please enter both a title and content for the note.');
         return;
     }
@@ -160,19 +172,15 @@ function addNotes() {
         image: currentImageDataUrl || null,
     };
 
-    if (editingIndex >= 0) {
-        notes[editingIndex] = noteObj;
-        editingIndex = -1;
-        currentImageDataUrl = '';
-        imageInput.value = '';
-        addNoteButton.textContent = 'Add Note';
-    } else {
-        notes.push(noteObj);
-    }
-
+    notes.push(noteObj);
     saveNotes(notes);
+
+    // Reset fields
     titleEditor.root.innerHTML = '';
     textEditor.root.innerHTML = '';
+    imageInput.value = '';
+    currentImageDataUrl = '';
+
     showNotes();
 }
 
@@ -202,14 +210,13 @@ function showNotes() {
         const noteElement = document.createElement('div');
         noteElement.classList.add('note');
         const title = note.title === '<p><br></p>' || !note.title ? 'Note' : note.title;
-        let imageHtml = '';
-        if (note.image) {
-            imageHtml = `<img src="${note.image}" alt="Note image" class="note-image">`;
-        }
-        // Sanitize text preview to avoid HTML injection in preview
-        let textPreview = note.text === '<p><br></p>' ? '' : DOMPurify.sanitize(note.text);
+        let imageHtml = note.image ? `<img src="${note.image}" alt="Note image" class="note-image">` : '';
+
+        // Sanitize text preview to avoid HTML injection
+        let textPreview = note.text === '<p><br></p>' ? '' : note.text;
+        
         noteElement.innerHTML = `
-            <div class="note-header">${DOMPurify.sanitize(title)}</div>
+            <div class="note-header">${title}</div>
             ${imageHtml}
             <div class="text">${textPreview}</div>
             <div class="note-actions">
@@ -219,12 +226,10 @@ function showNotes() {
             </div>
         `;
         noteElement.querySelector('.expand-btn').addEventListener('click', () => expandNote(index));
-        noteElement.querySelector('.edit-btn').addEventListener('click', () => openEditPopup(index));
+        noteElement.querySelector('.edit-btn').addEventListener('click', () => openEditModal(index));
         noteElement.querySelector('.deleteNote').addEventListener('click', () => deleteNote(index));
         notesDiv.appendChild(noteElement);
     });
-
-    updatePickerLabels();
 }
 
 function deleteNote(index) {
@@ -236,11 +241,9 @@ function deleteNote(index) {
     }
 }
 
-// Modified expandNote to open new window with full note details
 function expandNote(index) {
-    const notes = getNotes();
-    if (!notes[index]) return;
-    const note = notes[index];
+    const note = getNotes()[index];
+    if (!note) return;
 
     const title = note.title === '<p><br></p>' || !note.title ? 'Note' : note.title;
     const imageHtml = note.image ? `<img src="${note.image}" alt="Note image" style="max-width: 100%; height: auto; margin-bottom: 1em;">` : '';
@@ -249,98 +252,96 @@ function expandNote(index) {
     const popupHtml = `
         <html>
         <head>
-            <title>${title}</title>
+            <title>${document.title} - Note</title>
             <style>
                 body { font-family: Arial, sans-serif; padding: 20px; line-height: 1.5; }
-                img { max-width: 100%; height: auto; border: 1px solid #ccc; padding: 4px; }
-                h2 { margin-bottom: 0.5em; }
+                img { max-width: 100%; height: auto; border: 1px solid #ccc; padding: 4px; border-radius: 4px; }
             </style>
         </head>
         <body>
-            <h2>${title}</h2>
+            <div>${title}</div>
+            <hr>
             ${imageHtml}
             <div>${textHtml}</div>
         </body>
         </html>
     `;
-
-    const win = window.open('', '_blank', 'width=600,height=600,scrollbars=yes,resizable=yes');
+    const win = window.open('', '_blank', 'width=800,height=600,scrollbars=yes,resizable=yes');
     win.document.open();
     win.document.write(popupHtml);
     win.document.close();
 }
 
-// Modified openEditPopup to open new window with simple textareas for editing and save to localStorage
-function openEditPopup(index) {
+
+// ---- NEW Edit Modal Logic ----
+
+function openEditModal(index) {
     const notes = getNotes();
-    if (!notes[index]) return;
     const note = notes[index];
+    if (!note) return;
 
-    const title = note.title === '<p><br></p>' || !note.title ? '' : note.title;
-    const text = note.text === '<p><br></p>' || !note.text ? '' : note.text;
-    const image = note.image || '';
+    editingIndex = index;
 
-    const popupHtml = `
-        <html>
-        <head>
-            <title>Edit Note</title>
-            <style>
-                body { font-family: Arial, sans-serif; padding: 20px; }
-                label { font-weight: bold; display: block; margin-top: 1em; }
-                textarea { width: 100%; box-sizing: border-box; padding: 8px; font-family: Arial, sans-serif; font-size: 14px; }
-                button { margin-top: 1em; padding: 8px 16px; font-size: 14px; cursor: pointer; }
-                img { max-width: 100%; height: auto; margin-top: 1em; border: 1px solid #ccc; padding: 4px; }
-            </style>
-        </head>
-        <body>
-            <h2>Edit Note</h2>
-            <label for="titleInput">Title (HTML allowed):</label>
-            <textarea id="titleInput" rows="3" placeholder="Note Title">${title}</textarea>
+    // Populate the Quill editors with the note content
+    editTitleEditor.root.innerHTML = note.title;
+    editTextEditor.root.innerHTML = note.text;
+    
+    // Handle the image
+    currentImageDataUrl = note.image || '';
+    if (note.image) {
+        editPreviewImage.src = note.image;
+        editPreviewImage.style.display = 'block';
+    } else {
+        editPreviewImage.style.display = 'none';
+    }
 
-            <label for="textInput">Content (HTML allowed):</label>
-            <textarea id="textInput" rows="10" placeholder="Write your note content here...">${text}</textarea>
-
-            ${image ? `<label>Current Image:</label><img src="${image}" alt="Note image">` : ''}
-
-            <button id="saveBtn">Save</button>
-            <button id="cancelBtn">Cancel</button>
-
-            <script>
-                const saveBtn = document.getElementById('saveBtn');
-                const cancelBtn = document.getElementById('cancelBtn');
-                saveBtn.onclick = () => {
-                    const updatedTitle = document.getElementById('titleInput').value;
-                    const updatedText = document.getElementById('textInput').value;
-                    if (!updatedTitle.trim() || !updatedText.trim()) {
-                        alert('Please enter both title and content.');
-                        return;
-                    }
-                    try {
-                        const notes = JSON.parse(localStorage.getItem('notes')) || [];
-                        notes[${index}] = {
-                            title: updatedTitle,
-                            text: updatedText,
-                            image: '${image.replace(/'/g, "\\'")}'
-                        };
-                        localStorage.setItem('notes', JSON.stringify(notes));
-                        alert('Note updated successfully!');
-                        window.close();
-                    } catch (e) {
-                        alert('Error saving note.');
-                    }
-                };
-                cancelBtn.onclick = () => { window.close(); };
-            </script>
-        </body>
-        </html>
-    `;
-
-    const win = window.open('', '_blank', 'width=700,height=600,scrollbars=yes,resizable=yes');
-    win.document.open();
-    win.document.write(popupHtml);
-    win.document.close();
+    editPopup.style.display = 'flex'; // Show the modal
+    setTimeout(updatePickerLabels, 100); // Update picker labels in the modal
 }
 
+function closeEditModal() {
+    editPopup.style.display = 'none';
+    editingIndex = -1;
+    currentImageDataUrl = '';
+    editImageInput.value = '';
+    editPreviewImage.src = '';
+}
+
+function saveEditedNote() {
+    if (editingIndex < 0) return;
+
+    const notes = getNotes();
+    const updatedTitle = editTitleEditor.root.innerHTML;
+    const updatedText = editTextEditor.root.innerHTML;
+
+    if (updatedTitle.trim() === '<p><br></p>' || updatedText.trim() === '<p><br></p>') {
+        alert('Title and content cannot be empty.');
+        return;
+    }
+
+    notes[editingIndex] = {
+        title: DOMPurify.sanitize(updatedTitle),
+        text: DOMPurify.sanitize(updatedText),
+        image: currentImageDataUrl, // This will be the new or existing image URL
+    };
+
+    saveNotes(notes);
+    showNotes();
+    closeEditModal();
+}
+
+
+// ---- Event Listeners ----
+
+// Listener for adding a new note
+addNoteButton.addEventListener('click', addNotes);
+
+// Listeners for the edit modal buttons
+saveEditBtn.addEventListener('click', saveEditedNote);
+cancelEditBtn.addEventListener('click', closeEditModal);
+
+
+// Listener for image input when adding a note
 imageInput.addEventListener('change', async (e) => {
     const file = e.target.files[0];
     if (file) {
@@ -353,16 +354,17 @@ imageInput.addEventListener('change', async (e) => {
     }
 });
 
+// Listener for image input when editing a note
 editImageInput.addEventListener('change', async (e) => {
     const file = e.target.files[0];
     if (file) {
         try {
             currentImageDataUrl = await fileToBase64(file);
+            editPreviewImage.src = currentImageDataUrl;
+            editPreviewImage.style.display = 'block';
         } catch (error) {
             console.error('Error converting image to base64:', error);
             alert('Error uploading image.');
         }
     }
 });
-
-addNoteButton.addEventListener('click', addNotes);
