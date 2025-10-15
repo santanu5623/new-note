@@ -254,7 +254,7 @@ function expandNote(index) {
         <head>
             <title>${document.title} - Note</title>
             <style>
-                body { font-family: Arial, sans-serif; padding: 20px; line-height: 1.5; }
+                body { font-family: Arial, sans-serif; padding: 20px; line-height: 1.5; color: #333; }
                 img { max-width: 100%; height: auto; border: 1px solid #ccc; padding: 4px; border-radius: 4px; }
             </style>
         </head>
