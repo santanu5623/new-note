@@ -115,7 +115,7 @@ body::after {
     box-shadow: 0 12px 40px rgba(0, 0, 0, 0.15);
 }
 
-/* ---- Quill Editor Styles (Refactored) ---- */
+/* ---- Quill Editor Styles ---- */
 #title-editor, #text-editor, #edit-title-editor, #edit-text-editor {
     margin-bottom: 20px;
     border-radius: 8px;
@@ -153,7 +153,6 @@ body::after {
     font-style: normal !important;
 }
 
-/* Quill Toolbar Icons & Pickers */
 .ql-stroke { stroke: var(--text-primary) !important; }
 .ql-fill { fill: var(--text-primary) !important; }
 .ql-picker-label { color: var(--text-primary) !important; }
@@ -234,7 +233,7 @@ body::after {
     font-weight: 600;
     color: var(--primary-color);
     margin-bottom: 10px;
-    overflow-wrap: break-word; /* Prevents overflow */
+    overflow-wrap: break-word;
 }
 
 .note-image {
@@ -247,7 +246,7 @@ body::after {
 .note .text {
     font-size: 1rem;
     color: var(--text-secondary);
-    overflow-wrap: break-word; /* Allows long words to break */
+    overflow-wrap: break-word;
     flex-grow: 1;
     margin-bottom: 15px;
 }
@@ -300,7 +299,7 @@ body::after {
     border-radius: 12px;
     width: 90%;
     max-width: 800px;
-    max-height: 90vh; /* Responsive height */
+    max-height: 90vh;
     box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
     display: flex;
     flex-direction: column;
@@ -345,7 +344,7 @@ body::after {
 }
 #save-edit-btn:hover { background-color: var(--primary-hover); transform: translateY(-1px); }
 #cancel-edit-btn {
-    background-color: #34495e; /* A neutral dark grey */
+    background-color: #34495e;
     color: var(--text-primary);
 }
 #cancel-edit-btn:hover { background-color: #4a637e; transform: translateY(-1px); }
