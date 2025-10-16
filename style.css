@@ -165,6 +165,33 @@ body::after {
 }
 .ql-snow .ql-picker-item:hover { background: #3a3e44 !important; }
 
+/* ---- FIX: Overflow Handling for Font and Size Pickers ---- */
+.ql-font .ql-picker,
+.ql-size .ql-picker {
+    min-width: 120px;
+    max-width: 150px;
+}
+
+.ql-picker-label {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    padding-right: 20px; /* Space for dropdown arrow */
+    font-size: 12px; /* Slightly smaller font to fit better */
+}
+
+/* Responsive for smaller screens */
+@media (max-width: 768px) {
+    .ql-font .ql-picker,
+    .ql-size .ql-picker {
+        min-width: 100px;
+        max-width: 120px;
+    }
+    .ql-picker-label {
+        font-size: 11px;
+    }
+}
+
 /* ---- Form Controls ---- */
 .file-input {
     display: block;
