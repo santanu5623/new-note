@@ -206,7 +206,56 @@ function deleteNote(index) {
   }
 }
 
-// Render preview: image + title only
+// ---- Expand View ----
+function openExpandedView(note) {
+  // Sanitize content before injecting into new window
+  const safeTitle = DOMPurify.sanitize(note.title, { USE_PROFILES: { html: true } });
+  const safeBody  = DOMPurify.sanitize(note.text,  { USE_PROFILES: { html: true } });
+  const imgHtml = note.image
+    ? `<img src="${note.image}" alt="Note image" style="max-width:100%;height:auto;border-radius:8px;margin:12px 0;">`
+    : '';
+
+  const html = `
+    <!DOCTYPE html>
+    <html>
+      <head>
+        <meta charset="utf-8">
+        <title>Note Preview</title>
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+        <style>
+          body { font-family: -apple-system, Segoe UI, Roboto, Open Sans, Arial, sans-serif; margin: 0; padding: 24px; line-height: 1.6; color: #111827; background: #f9fafb; }
+          .container { max-width: 900px; margin: 0 auto; background: #fff; border-radius: 12px; box-shadow: 0 10px 30px rgba(0,0,0,0.08); padding: 28px; }
+          .title { font-size: 1.6rem; font-weight: 700; color: #0f172a; margin-bottom: 6px; }
+          .divider { height: 1px; background: #e5e7eb; margin: 16px 0 20px; border: 0; }
+          .content { font-size: 1rem; color: #1f2937; }
+          .toolbar { position: sticky; top: 0; background: #f9fafb; padding: 10px 0; margin: -24px -24px 16px; border-bottom: 1px solid #e5e7eb; display: flex; gap: 8px; justify-content: flex-end; }
+          .btn { background:#111827; color:#fff; border:none; border-radius:6px; padding:8px 12px; cursor:pointer; }
+          .btn:hover { background:#000; }
+        </style>
+      </head>
+      <body>
+        <div class="container">
+          <div class="toolbar">
+            <button class="btn" onclick="window.print()">Print</button>
+            <button class="btn" onclick="window.close()">Close</button>
+          </div>
+          <div class="title">${safeTitle}</div>
+          <hr class="divider">
+          ${imgHtml}
+          <div class="content">${safeBody}</div>
+        </div>
+      </body>
+    </html>
+  `;
+
+  // Open in a large external window using a Blob URL
+  const blob = new Blob([html], { type: 'text/html' });
+  const url = URL.createObjectURL(blob);
+  window.open(url, '_blank', 'noopener,noreferrer,width=1100,height=800'); // large view
+}
+// ---- End Expand View ----
+
+// Render preview: image + title only (+ actions)
 function showNotes() {
   const notes = getNotes();
   notesDiv.innerHTML = '';
@@ -224,15 +273,26 @@ function showNotes() {
       ${imgHtml}
       <div class="note-header preview-title">${DOMPurify.sanitize(titleText)}</div>
       <div class="note-actions">
+        <button class="expand-btn" aria-label="Expand note">Expand</button>
         <button class="edit-btn" aria-label="Edit note">Edit</button>
         <button class="deleteNote" aria-label="Delete note">Delete</button>
       </div>
     `;
 
+    // Expand
+    card.querySelector('.expand-btn').addEventListener('click', (e) => {
+      e.stopPropagation();
+      const current = getNotes()[index];
+      if (current) openExpandedView(current);
+    });
+
+    // Edit
     card.querySelector('.edit-btn').addEventListener('click', (e) => {
       e.stopPropagation();
       openEditModal(index);
     });
+
+    // Delete
     card.querySelector('.deleteNote').addEventListener('click', (e) => {
       e.stopPropagation();
       deleteNote(index);
