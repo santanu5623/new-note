@@ -18,9 +18,6 @@
   --font-header: 'Poppins', sans-serif;
 }
 
-/* ---- Global Styles ---- */
-* { margin: 0; padding: 0; box-sizing: border-box; font-family: var(--font-main); }
-
 /* ---- Premium Space Background ---- */
 body {
   background: radial-gradient(circle at center, #02010a 0%, #000000 100%);
