@@ -19,8 +19,9 @@
 }
 
 /* ---- Premium Space Background ---- */
+/* ---- Static Space Background ---- */
 body {
-  background: radial-gradient(circle at center, #02010a 0%, #000000 100%);
+  background: radial-gradient(circle at center, #0a0e26 0%, #000000 100%);
   min-height: 100vh;
   color: var(--text-primary);
   line-height: 1.6;
@@ -28,7 +29,7 @@ body {
   overflow-x: hidden;
 }
 
-/* ✨ Tiny twinkling star field */
+/* ✨ Static star layer */
 body::before {
   content: '';
   position: fixed;
@@ -37,37 +38,14 @@ body::before {
   z-index: -2;
   pointer-events: none;
   background-image: url("https://www.transparenttextures.com/patterns/stardust.png");
-  opacity: 0.45; /* star brightness */
-  animation: twinkle 4s infinite alternate ease-in-out;
+  opacity: 0.25;
 }
 
-/* 🌌 Rare bright nebula stars layer */
+/* Remove old animated blob layer */
 body::after {
-  content: '';
-  position: fixed;
-  top: 0; left: 0;
-  width: 100%; height: 100%;
-  z-index: -3;
-  pointer-events: none;
-  background:
-    radial-gradient(circle at 15% 30%, rgba(255,255,255,0.18) 0%, transparent 60%),
-    radial-gradient(circle at 75% 80%, rgba(255,255,255,0.24) 0%, transparent 70%);
-  filter: blur(1px);
-  opacity: 0.35;
-  animation: glowShift 12s infinite alternate ease-in-out;
+  content: none;
 }
 
-/* ⭐ Twinkle animation */
-@keyframes twinkle {
-  0% { opacity: 0.35; }
-  100% { opacity: 0.55; }
-}
-
-/* 🌌 Nebula soft shifting */
-@keyframes glowShift {
-  0% { transform: translateY(0) scale(1); }
-  100% { transform: translateY(-10px) scale(1.03); }
-}
 
 /* ---- Header ---- */
 .app-header {
